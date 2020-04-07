@@ -1,4 +1,4 @@
-#include <QFile>
+﻿#include <QFile>
 #include <QSettings>
 #include <QDebug>
 #include <QCoreApplication>
@@ -33,6 +33,8 @@ LocalSetting::LocalSetting(QObject *parent) :
         m_iP2PExpire = settingFile.value("OpenAPI/P2PExpire").toInt();
         m_iLogLevel = settingFile.value("OpenAPI/logLevel").toInt();
         m_bDownload = settingFile.value("OpenAPI/download").toBool();
+        m_username = settingFile.value("OpenAPI/username").toString();
+        m_passwd = settingFile.value("OpenAPI/passwd").toString();
     }
     else {
         m_authAddress = "https://auth.ys7.com";
@@ -197,4 +199,19 @@ int  LocalSetting::logLevel()
 bool LocalSetting::download()
 {
     return m_bDownload;
+}
+
+QString& LocalSetting::username()
+{
+    return m_username;
+}
+
+QString& LocalSetting::passwd()
+{
+    return m_passwd;
+}
+
+QString& LocalSetting::accessToken()
+{
+    return m_accessToken;
 }

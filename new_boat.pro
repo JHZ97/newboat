@@ -89,8 +89,6 @@ RESOURCES += \
     picture.qrc
 
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/win32/ -lOpenNetStream
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/win32/ -lOpenNetStreamd
-else:unix: LIBS += -L$$PWD/win32/ -lOpenNetStream
 
 INCLUDEPATH += $$PWD/include
 DEPENDPATH += $$PWD/include

@@ -3,7 +3,6 @@
 
 
 
-
 void MainWindow::set_vodeo()
 {
     m_deviceTableModel = new CameraModel(this);
@@ -12,6 +11,9 @@ void MainWindow::set_vodeo()
     //! [1] init library，alloc session
     OpenNetStream::getInstance()->initLibrary(LocalSetting::getInstance()->authAddress(), LocalSetting::getInstance()->platformAddress(), LocalSetting::getInstance()->appKey());
     QString areaID = LocalSetting::getInstance()->areaId();
+    username = LocalSetting::getInstance()->username();
+    passwd = LocalSetting::getInstance()->passwd();
+    accessId = LocalSetting::getInstance()->accessToken();
     if (!areaID.isEmpty())
     {
         OpenNetStream::getInstance()->setAreaID(areaID);
@@ -60,17 +62,74 @@ void MainWindow::set_vodeo()
     }
 
     m_sessionId = OpenNetStream::getInstance()->allocSessionEx(MainWindow::messageHandler, this);
-    m_loginWindow = new LoginWindow(this);
+   // m_loginWindow = new LoginWindow(this);
     //! [1]
+     update_token();
 }
 
+void MainWindow::update_token()
+{
 
+        QNetworkAccessManager *accessManager = new QNetworkAccessManager(this);
+        connect(accessManager, SIGNAL(finished(QNetworkReply*)), this, SLOT(finishedSlot(QNetworkReply*)));
+
+        QNetworkRequest request;
+        request.setUrl(QUrl("http://47.100.92.173:10010/client/login"));
+
+        QByteArray postData;
+        postData.append("accountName=");
+        postData.append(username);
+        postData.append("&password=");
+        postData.append(passwd);
+        request.setHeader(QNetworkRequest::ContentTypeHeader,"application/x-www-form-urlencoded");
+        request.setHeader(QNetworkRequest::ContentLengthHeader,postData.size());
+//post
+        QNetworkReply* reply = accessManager->post(request, postData);
+}
+
+void MainWindow::finishedSlot(QNetworkReply *reply)
+{
+     if (reply->error() == QNetworkReply::NoError)
+     {
+         QByteArray bytes = reply->readAll();
+         QJsonParseError parseJsonErr;
+             QJsonDocument document = QJsonDocument::fromJson(bytes,&parseJsonErr);
+             if(!(parseJsonErr.error == QJsonParseError::NoError))
+             {
+                 qDebug()<<tr("解析json文件错误！");
+                 return;
+             }
+             QJsonObject jsonObject = document.object();
+             if(jsonObject.contains(QStringLiteral("result")))
+                 {
+                     QJsonValue jsonValueList = jsonObject.value(QStringLiteral("result"));
+                     //QJsonObject item = jsonValueList.toObject();
+                     accessId = jsonValueList["accessToken"].toString();
+                     QString appName = "EzvizQtDemo";
+                     QString iniFile = "/" + appName + ".ini";
+                     QString configFile = QCoreApplication::applicationDirPath()  + iniFile;
+                     QSettings settingFile(configFile, QSettings::IniFormat);
+                     qDebug() << appName << configFile;
+                     settingFile.setValue("OpenAPI/accessToken",accessId);
+                 }
+         qDebug() << bytes;
+     }
+     else
+     {
+         qDebug() << "finishedSlot errors here";
+         qDebug( "found error .... code: %d\n", (int)reply->error());
+         qDebug(qPrintable(reply->errorString()));
+     }
+     reply->deleteLater();
+     on_loginButton_clicked();
+}
 
 /*! @function Login
  * \brief MainWindow::on_loginButton_clicked
  */
 void MainWindow::on_loginButton_clicked()
 {
+    /*
     m_loginWindow->clearParam();
     m_loginWindow->exec();
     QString accessId;
@@ -79,6 +138,7 @@ void MainWindow::on_loginButton_clicked()
     {
         return ;
     }
+    */
     OpenNetStream::getInstance()->setAccessToken(accessId);
     const char* pTokenExpireTime = OpenNetStream::getInstance()->getTokenExpireTime();
     if (pTokenExpireTime != NULL)
@@ -155,6 +215,15 @@ void MainWindow::on_loginButton_clicked()
         }
     }
     */
+    start_play();
+    connect(ui->ptz_up,SIGNAL(pressed()),this,SLOT(send_up()));
+    connect(ui->ptz_up,SIGNAL(released()),this,SLOT(stop_up()));
+    connect(ui->ptz_down,SIGNAL(pressed()),this,SLOT(send_down()));
+    connect(ui->ptz_down,SIGNAL(released()),this,SLOT(stop_down()));
+    connect(ui->ptz_left,SIGNAL(pressed()),this,SLOT(send_left()));
+    connect(ui->ptz_left,SIGNAL(released()),this,SLOT(stop_left()));
+    connect(ui->ptz_right,SIGNAL(pressed()),this,SLOT(send_right()));
+    connect(ui->ptz_right,SIGNAL(released()),this,SLOT(stop_right()));
 }
 
 int MainWindow::start_play()
@@ -168,10 +237,10 @@ int MainWindow::start_play()
         QMessageBox::warning(this,dlgTitle,strInfo,QMessageBox::Ok,QMessageBox::NoButton);
         return -1;
     }
-    stDeviceInfo.strSubserial = m_deviceTableModel->getSerial(3);//3是船上的相机
-    stDeviceInfo.iChannelNo = m_deviceTableModel->getCameraNo(1);
+    stDeviceInfo.strSubserial = m_deviceTableModel->getSerial(0);//3是船上的相机
+    stDeviceInfo.iChannelNo = m_deviceTableModel->getCameraNo(0);
     stDeviceInfo.bEncrypt = m_deviceTableModel->getIsEncrypt(0);
-    stDeviceInfo.iVideoLevel = m_deviceTableModel->getVideoLevel(3);//超清
+    stDeviceInfo.iVideoLevel = m_deviceTableModel->getVideoLevel(0);//超清
     bool bEncrypt = stDeviceInfo.bEncrypt;
     QString devSerial = stDeviceInfo.strSubserial;
     int iChannelNo = stDeviceInfo.iChannelNo;
@@ -278,3 +347,92 @@ void MainWindow::showErrInfo(QString caption)
     QMessageBox::information(this, caption, szBuf);
 }
 
+void MainWindow::insPtzStart(PTZCMD emDirect)
+{
+    /*
+    if(!s->is_paly())
+    {
+        QMessageBox::warning(this,QStringLiteral("失败") , QStringLiteral("请先播放该视频"));
+        return;
+    }
+    */
+    QNetworkAccessManager *accessManager = new QNetworkAccessManager(this);
+    connect(accessManager, SIGNAL(finished(QNetworkReply*)), this, SLOT(move_result(QNetworkReply*)));
+
+    QNetworkRequest request;
+    request.setUrl(QUrl("https://open.ys7.com/api/lapp/device/ptz/start"));
+
+    QByteArray postData;
+    postData.append("accessToken=");
+    postData.append(accessId);
+    postData.append("&deviceSerial=");
+    postData.append(m_devSerial);
+    postData.append("&channelNo=");
+    postData.append(QString::number(m_Channel));
+    postData.append("&direction=");
+    switch (emDirect)
+    {//up：0  ,down :1 ,left:2  ,right:3
+    case DIRECT_UP:
+        postData.append(QString::number(0));
+        break;
+    case DIRECT_DOWN:
+        postData.append(QString::number(1));
+        break;
+    case DIRECT_LEFT:
+        postData.append(QString::number(2));
+        break;
+    case DIRECT_RIGHT:
+        postData.append(QString::number(3));
+    }
+    postData.append("&speed=1");
+    request.setHeader(QNetworkRequest::ContentTypeHeader,"application/x-www-form-urlencoded");
+    request.setHeader(QNetworkRequest::ContentLengthHeader,postData.size());
+//post
+    QNetworkReply* reply = accessManager->post(request, postData);
+}
+
+void MainWindow::insPtzStop(PTZCMD emDirect)
+{
+
+    QNetworkAccessManager *accessManager = new QNetworkAccessManager(this);
+    connect(accessManager, SIGNAL(finished(QNetworkReply*)), this, SLOT(move_result(QNetworkReply*)));
+
+    QNetworkRequest request;
+    request.setUrl(QUrl("https://open.ys7.com/api/lapp/device/ptz/stop"));
+
+    QByteArray postData;
+    postData.append("accessToken=");
+    postData.append(accessId);
+    postData.append("&deviceSerial=");
+    postData.append(m_devSerial);
+    postData.append("&channelNo=");
+    postData.append(QString::number(m_Channel));
+    postData.append("&direction=");
+    switch (emDirect)
+    {//up：0  ,down :1 ,left:2  ,right:3
+    case DIRECT_UP:
+        postData.append(QString::number(0));
+        break;
+    case DIRECT_DOWN:
+        postData.append(QString::number(1));
+        break;
+    case DIRECT_LEFT:
+        postData.append(QString::number(2));
+        break;
+    case DIRECT_RIGHT:
+        postData.append(QString::number(3));
+    }
+    request.setHeader(QNetworkRequest::ContentTypeHeader,"application/x-www-form-urlencoded");
+    request.setHeader(QNetworkRequest::ContentLengthHeader,postData.size());
+//post
+    QNetworkReply* reply = accessManager->post(request, postData);
+}
+
+
+void MainWindow::move_result(QNetworkReply* reply)
+{
+    if (reply->error() != QNetworkReply::NoError)
+    {
+        QMessageBox::warning(this,QStringLiteral("失败") , QStringLiteral("请求失败！"));
+    }
+}

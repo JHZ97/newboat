@@ -173,8 +173,8 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>20</y>
-       <width>721</width>
+       <y>30</y>
+       <width>711</width>
        <height>351</height>
       </rect>
      </property>
@@ -774,7 +774,7 @@
     </property>
     <widget class="QPushButton" name="loginButton">
      <property name="enabled">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <property name="geometry">
       <rect>
@@ -790,7 +790,7 @@
     </widget>
     <widget class="QPushButton" name="start_paly">
      <property name="enabled">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <property name="geometry">
       <rect>
@@ -1012,13 +1012,65 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>100</y>
+       <y>130</y>
        <width>75</width>
        <height>23</height>
       </rect>
      </property>
      <property name="text">
       <string>手动收垃圾</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="ptz_up">
+     <property name="geometry">
+      <rect>
+       <x>110</x>
+       <y>20</y>
+       <width>80</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>上</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="ptz_down">
+     <property name="geometry">
+      <rect>
+       <x>110</x>
+       <y>50</y>
+       <width>80</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>下</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="ptz_left">
+     <property name="geometry">
+      <rect>
+       <x>110</x>
+       <y>90</y>
+       <width>80</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>左</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="ptz_right">
+     <property name="geometry">
+      <rect>
+       <x>110</x>
+       <y>130</y>
+       <width>80</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>右</string>
      </property>
     </widget>
    </widget>

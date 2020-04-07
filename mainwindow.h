@@ -9,8 +9,14 @@
 #include <QDir>
 #include <QTableView>
 #include <QMessageBox>
+#include <QJsonDocument>
+#include <QJsonParseError>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonValue>
 #include <QJoysticks.h>
 #include <QTimer>
+#include <QSettings>
 #include "cameramodel.h"
 #include "loginwindow.h"
 #include "util/json/json.h"
@@ -35,6 +41,28 @@ typedef struct tagDeviceTableViewInfo
     bool bEncrypt;
     int  iVideoLevel;
 }DeviceTableViewInfo;
+
+
+enum PTZCMD
+{
+    DIRECT_UP,
+    DIRECT_DOWN,
+    DIRECT_LEFT,
+    DIRECT_RIGHT,
+    DIRECT_UPLEFT,
+    DIRECT_DOWNLEFT,
+    DIRECT_UPRIGHT,
+    DIRECT_DOWNRIGHT,
+    PTZ_ZOOMIN,
+    PTZ_ZOOMOUT,
+    PTZ_FOCUSNEAR,
+    PTZ_FOCUSFAR,
+    PTZ_IRISSTARTUP,
+    PTZ_IRISSTOPDOWN,
+    PTZ_LIGHT,
+    PTZ_WIPER,
+    PTZ_AUTO
+};
 
 
 QT_BEGIN_NAMESPACE
@@ -68,7 +96,9 @@ private:
     QString myReplyMessage;
     int     m_Channel;
     CameraModel*    m_deviceTableModel;
-
+    QString username;
+    QString passwd;
+    QString accessId;
     //! [3]  some flage
     bool m_bSync;
     bool m_bRealPlayStarted;
@@ -216,7 +246,20 @@ private slots:
     int hex2int1(char c1);
     int hex2int2(char c1,char c2);
     short hex2short(char c1,char c2);
-
+    //video login
+    void update_token();
+    void finishedSlot(QNetworkReply*);
+    void move_result(QNetworkReply*);
+    void insPtzStop(PTZCMD emDirect);
+    void insPtzStart(PTZCMD emDirect);
+    void send_up(){insPtzStart(DIRECT_UP);}
+    void send_down(){insPtzStart(DIRECT_DOWN);}
+    void send_left(){insPtzStart(DIRECT_LEFT);}
+    void send_right(){insPtzStart(DIRECT_RIGHT);}
+    void stop_up(){insPtzStop(DIRECT_UP);}
+    void stop_down(){insPtzStop(DIRECT_DOWN);}
+    void stop_left(){insPtzStop(DIRECT_LEFT);}
+    void stop_right(){insPtzStop(DIRECT_RIGHT);}
     //菜单栏menu的槽
     void on_aboutAwesome_triggered();//联系我们 傲宋官网
     void on_unmannedShip_triggered();//帮助 关于无人船

@@ -36,6 +36,9 @@ public:
     int  P2PExpire();
     int  logLevel();
     bool download();
+    QString& username();
+    QString& passwd();
+    QString& accessToken();
 signals:
 
 public slots:
@@ -49,6 +52,9 @@ private:
     QString m_areaID;
     QString m_loginVer;
 	QString m_Phone;
+    QString m_username;
+    QString m_passwd;
+    QString m_accessToken;
 	bool m_bPlay;
     bool m_bSaveData;
     int m_iPageStart;

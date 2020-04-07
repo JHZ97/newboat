@@ -1,0 +1,186 @@
+
+<!DOCTYPE html>  
+<html>
+<head>  
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />  
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />  
+<title>Hello, World</title>  
+<style type="text/css">  
+html{height:100%}  
+body{height:100%;margin:0px;padding:0px}  
+#container{height:100%}  
+</style>  
+<script type="text/javascript" src="http://api.map.baidu.com/api?v=3.0&ak=x6snAPtz1yvu1I9Zcl28sC6CritvnQCo">
+</script>
+<script type="text/javascript" src="qwebchannel.js"></script>
+</head>  
+ 
+<body>  
+<div id="container"></div> 
+</body>  
+</html>
+<script type="text/javascript"> 
+
+new QWebChannel(qt.webChannelTransport,
+    function(channel){
+        window.bridge = channel.objects.passId; // 注册
+    })
+
+var map = new BMap.Map("container");
+// 创建地图实例  
+var ini_point = new BMap.Point(120.125055,30.261413);
+// 创建点坐标  
+map.centerAndZoom(ini_point, 15);
+// 初始化地图，设置中心点坐标和地图级别  
+map.enableScrollWheelZoom(true);//开启滚轮放大缩小
+var cur_point = null;
+//addCurMarker();
+var path=[cur_point];
+map.addEventListener("mousemove",event2);
+
+
+//清除标签为label的标记
+function clearMaker(label){
+var allOverlay = map.getOverlays();
+		for (var i = 0; i < allOverlay.length ; i++){
+			 if (allOverlay[i] instanceof BMap.Marker) {
+                if (allOverlay[i].getLabel() == null || allOverlay[i].getLabel().content == label) {
+					map.removeOverlay(allOverlay[i]);
+                    return false;
+                }
+            }
+		}
+}
+	
+function drawLine(){
+map.clearOverlays();
+var lines = new BMap.Polyline(path,{strokeColor:"red", strokeWeight:2, strokeOpacity:0.5})
+map.addOverlay(lines);
+setTerminal(path[path.length-1]);
+}	
+	
+//鼠标点击的响应
+function event1(e){
+
+path.push(new BMap.Point(e.point.lng,e.point.lat));
+drawLine();
+
+}
+
+//鼠标移动的响应
+function event2(e){
+window.bridge.showGPS(e.point.lng,e.point.lat);
+}
+
+//进入设置状态(设置了监听鼠标事件)
+function path_model()
+{
+clearMaker("t");
+map.clearOverlays(); 
+map.addEventListener("click",event1);
+}
+
+//发送path
+function send_path()
+{
+  map.removeEventListener("click", event1);
+  var arr = [];
+  for(i = 0; i < path.length-1; i++)
+  {
+     arr.push(path[i+1].lng);
+	 arr.push(path[i+1].lat);
+  }  
+  window.bridge.getPath(JSON.stringify(arr));
+   path=[cur_point];
+}
+
+//清除路径标记
+function path_clean()
+{
+  map.clearOverlays();
+  clearMaker("t");
+}
+
+function quit_path_set()
+{
+map.removeEventListener("click", event1);
+path_clean();
+path=[cur_point];
+}
+	
+// 用经纬度设置地图中心点，设置当前位置
+function theLocation(lon,lat){
+		if (cur_point==null)
+		{map.setZoom(20);
+		cur_point = new BMap.Point(lon,lat);
+		addCurMarker();
+		map.panTo(cur_point);	}
+		else{
+		cur_point = new BMap.Point(lon,lat);
+		addCurMarker();
+		}
+		
+		path[0]=cur_point;
+	}
+
+//添加当前位置标记
+function addCurMarker(){  // 创建图标对象   
+    var myIcon = new BMap.Icon("mark.png", new BMap.Size(40, 15), {    
+        // 指定定位位置。   
+        // 当标注显示在地图上时，其所指向的地理位置距离图标左上    
+        // 角各偏移10像素和25像素。您可以看到在本例中该位置即是   
+        // 图标中央下端的尖角位置。    
+        anchor: new BMap.Size(20, 15),    
+        // 设置图片偏移。   
+        // 当您需要从一幅较大的图片中截取某部分作为标注图标时，您   
+        // 需要指定大图的偏移位置，此做法与css sprites技术类似。    
+        imageOffset: new BMap.Size(0, 0)   // 设置图片偏移    
+    });      
+    // 创建标注对象并添加到地图   
+    var marker = new BMap.Marker(cur_point, {icon: myIcon});    
+    var label = new BMap.Label("s");
+    label.setStyle({ 
+	display : "none"});
+	marker.setLabel(label);
+	marker.disableMassClear();
+	clearMaker("s");
+	map.addOverlay(marker);        
+}    
+ 
+//添加终点位置标记及相关动作
+function setTerminal(point){
+		clearMaker("t"); 
+		//map.clearOverlays();
+		addTerMarker(point);		
+}
+
+
+
+//添加终点位置标记
+function addTerMarker(point){  // 创建图标对象   
+    var myIcon = new BMap.Icon("terminal.png", new BMap.Size(20, 23), {    
+        // 指定定位位置。   
+        // 当标注显示在地图上时，其所指向的地理位置距离图标左上    
+        // 角各偏移10像素和25像素。您可以看到在本例中该位置即是   
+        // 图标中央下端的尖角位置。    
+        anchor: new BMap.Size(10, 23),    
+        // 设置图片偏移。   
+        // 当您需要从一幅较大的图片中截取某部分作为标注图标时，您   
+        // 需要指定大图的偏移位置，此做法与css sprites技术类似。    
+        imageOffset: new BMap.Size(0, 0)   // 设置图片偏移    
+    });      
+    // 创建标注对象并添加到地图   
+    var marker = new BMap.Marker(point, {icon: myIcon});    
+    var label = new BMap.Label("t");
+    label.setStyle({ 
+	display : "none"});
+	marker.setLabel(label);
+	map.addOverlay(marker);    
+}    
+
+
+
+
+
+</script>  
+
